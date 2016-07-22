@@ -15,10 +15,13 @@ var iqwerty = iqwerty || {};
 iqwerty.diff = (function() {
 
 	const MAX_DISTANCE = Number.MAX_SAFE_INTEGER;
-	const FROM = 'from';
-	const TO = 'to';
-	const LDIS = 'levenshteinDistance';
-	const CHANGES = 'changes';
+
+	const DO = {
+		FROM: 'from',
+		TO: 'to',
+		LDIS: 'levenshteinDistance',
+		CHANGES: 'changes'
+	};
 
 	function DiffObject(diff) {
 		Object.assign(this, diff);
@@ -125,10 +128,10 @@ iqwerty.diff = (function() {
 		changes.reverse();
 
 		return new DiffObject({
-			[FROM]: str1,
-			[TO]: str2,
-			[LDIS]: dp[str1.length][str2.length],
-			[CHANGES]: changes
+			[DO.FROM]: str1,
+			[DO.TO]: str2,
+			[DO.LDIS]: dp[str1.length][str2.length],
+			[DO.CHANGES]: changes
 		});
 	}
 
