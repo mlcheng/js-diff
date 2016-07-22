@@ -16,41 +16,41 @@ const { Test, inject } = require('../../test/test.js');
 inject(__dirname, '../diff.js');
 
 
-let res;
+let diff;
 
-res = iqwerty.diff.Diff('pineapple', 'apple');
+diff = iqwerty.diff.Diff('pineapple', 'apple');
 Test('"pineapple" to "apple" should have Levenshtein distance of 4')
-	.expect(res.levenshteinDistance)
+	.expect(diff.levenshteinDistance)
 	.toBe(4);
 
 Test('"pineapple" to "apple" should have an array of 9 changes')
-	.expect(res.changes.length)
+	.expect(diff.changes.length)
 	.toBe(9);
 
 Test('"pineapple" to "apple" should output a diff string of "(-p)(-i)(-n)(-e)apple"')
-	.expect(res.toString())
+	.expect(diff.toString())
 	.toBe('(-p)(-i)(-n)(-e)apple');
 
 
-res = iqwerty.diff.Diff('apple', 'pineapple');
+diff = iqwerty.diff.Diff('apple', 'pineapple');
 Test('"apple" to "pineapple" should have a Levenshtein distance of 4')
-	.expect(res.levenshteinDistance)
+	.expect(diff.levenshteinDistance)
 	.toBe(4);
 
 Test('"apple" to "pineapple" should output a diff string of "(+p)(+i)(+n)(+e)apple"')
-	.expect(res.toString())
+	.expect(diff.toString())
 	.toBe('(+p)(+i)(+n)(+e)apple');
 
 
-res = iqwerty.diff.Diff('kitten', 'sitting');
+diff = iqwerty.diff.Diff('kitten', 'sitting');
 Test('"kitten" to "sitting" should have a Levenshtein distance of 3')
-	.expect(res.levenshteinDistance)
+	.expect(diff.levenshteinDistance)
 	.toBe(3);
 
 Test('"kitten" to "sitting" should have an array of 7 changes')
-	.expect(res.changes.length)
+	.expect(diff.changes.length)
 	.toBe(7);
 
 Test('"kitten" to "sitting" should output a diff string of "(-k)(+s)itt(-e)(+i)n(+g)"')
-	.expect(res.toString())
+	.expect(diff.toString())
 	.toBe('(-k)(+s)itt(-e)(+i)n(+g)');
