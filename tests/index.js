@@ -54,3 +54,15 @@ Test('"kitten" to "sitting" should have an array of 7 changes')
 Test('"kitten" to "sitting" should output a diff string of "(-k)(+s)itt(-e)(+i)n(+g)"')
 	.expect(diff.toString())
 	.toBe('(-k)(+s)itt(-e)(+i)n(+g)');
+
+
+diff = iqwerty.diff.Diff('', '.');
+Test('Edge case from empty to symbol should output a diff string of "(+.)"')
+	.expect(diff.toString())
+	.toBe('(+.)');
+
+
+diff = iqwerty.diff.Diff('.', '');
+Test('Edge case from symbol to empty should output a diff string of "(-.)"')
+	.expect(diff.toString())
+	.toBe('(-.)');
