@@ -32,5 +32,5 @@ An array containing the changes needed to transform the source string. You may p
 Call this method to print the default string with changes made. In this case, `.toString()` will output
 
 ```html
-(-p)(-i)(-n)(-e)apple"
+(-pine)apple"
 ```
