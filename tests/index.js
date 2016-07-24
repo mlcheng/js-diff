@@ -29,7 +29,7 @@ Test('"pineapple" to "apple" should have an array of 9 changes')
 
 Test('"pineapple" to "apple" should output a diff string of "(-p)(-i)(-n)(-e)apple"')
 	.expect(diff.toString())
-	.toBe('(-p)(-i)(-n)(-e)apple');
+	.toBe('(-pine)apple');
 
 
 diff = iqwerty.diff.Diff('apple', 'pineapple');
@@ -39,7 +39,7 @@ Test('"apple" to "pineapple" should have a Levenshtein distance of 4')
 
 Test('"apple" to "pineapple" should output a diff string of "(+p)(+i)(+n)(+e)apple"')
 	.expect(diff.toString())
-	.toBe('(+p)(+i)(+n)(+e)apple');
+	.toBe('(+pine)apple');
 
 
 diff = iqwerty.diff.Diff('kitten', 'sitting');

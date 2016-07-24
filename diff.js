@@ -12,143 +12,149 @@
 'use strict';
 
 var iqwerty = iqwerty || {};
-iqwerty.diff = (function() {
 
+iqwerty.diff = (function() {
+	
 	const MAX_DISTANCE = Number.MAX_SAFE_INTEGER;
 
-	const DO = {
+	const DiffObjectProp = {
 		FROM: 'from',
 		TO: 'to',
 		LDIS: 'levenshteinDistance',
 		CHANGES: 'changes'
 	};
 
-	function DiffObject(diff) {
-		Object.assign(this, diff);
+
+	function DiffObject(obj) {
+		Object.assign(this, obj);
 	}
+
 
 	DiffObject.prototype.toString = function() {
 		return diffToString(this);
 	};
 
-	function Diff(str1, str2) {
-		// Do Levenshtein distance
-		let dp = [];
 
-		// Initialize matrix
-		for(let i=0; i<str1.length+1; i++) {
-			dp[i] = [];
-			for(let j=0; j<str2.length+1; j++) {
-				if(!i) dp[i][j] = j;
-				else if(!j) dp[i][j] = i;
-				else dp[i][j] = 0;
+	function Diff(from, to) {
+		// Dynamic programming matrix
+		let steps = [];
+
+		// Initialize the matrix that shows the steps needed to make each change
+		for(let i=0; i<=from.length; i++) {
+			steps[i] = [];
+			for(let j=0; j<=to.length; j++) {
+				if(i === 0) steps[i][j] = j;
+				else if(j === 0) steps[i][j] = i;
+				else steps[i][j] = 0;
 			}
 		}
 
-		// Build the Levenshtein distance matrix using dynamic programming
-		for(let i=0; i<str1.length; i++) {
-			for(let j=0; j<str2.length; j++) {
-				if(str2.charAt(j) === str1.charAt(i)) {
-					dp[i+1][j+1] = dp[i][j];
-				} else {
-					dp[i+1][j+1] = Math.min(dp[i][j+1], dp[i][j], dp[i+1][j])+1;
+
+		// Build the Levenshtein distance matrix
+		{
+			let left, diagonal, up;
+			for(let i=1; i<=from.length; i++) {
+				for(let j=1; j<=to.length; j++) {
+					left = steps[i][j-1];
+					diagonal = steps[i-1][j-1];
+					up = steps[i-1][j];
+					if(from.charAt(i-1) === to.charAt(j-1)) {
+						// Current characters are same, so inherit from last LCS (which is diagonal)
+						steps[i][j] = diagonal;
+					} else {
+						// Another difference, so add one to the last optimal LCS
+						steps[i][j] = Math.min(left, diagonal, up) + 1;
+						
+					}
 				}
 			}
 		}
-
-		// Matrix is built, now look for changes needed
+		
+		//Traverse the matrix to get the differences
 		let changes = [];
 		{
-			let i = str1.length, j = str2.length;
-			while(j > 0 || i > 0) {
-				let up, diagonal, left;
-				if(i-1 < 0) {
-					up = MAX_DISTANCE;
-				} else {
-					up = dp[i-1][j];
-				}
-				if(j-1 < 0) {
-					left = MAX_DISTANCE;
-				} else {
-					left = dp[i][j-1];
-				}
-				if(i-1 < 0 || j-1 < 0) {
-					diagonal = MAX_DISTANCE;
-				} else {
-					diagonal = dp[i-1][j-1];
-				}
-				let source = Math.min(up, diagonal, left);
-
-				// Exit if the source is no longer available
-				if(source === MAX_DISTANCE) break;
-
-				if(source === diagonal) {
-					/*
-					Came from diagonal
-					Check to see if letters are the same first
-					If they aren't the same, then a replacement was done
-					 */
-					let char, diff;
-					if(str1[i-1] === str2[j-1]) {
-						char = str1[i-1];
-						diff = '=';
-					} else {
-						char = str2[j-1];
-						diff = {
-							replace: str1[i-1]
-						};
-					}
-					changes.push({ char, diff });
-					i -= i ? 1 : 0;
-					j--;
-				} else if(source === up) {
-					/*
-					Came from above
-					Means remove str1's char
-					 */
-					changes.push({
-						char: str1[i-1],
-						diff: '-'
-					});
+			let i = from.length, j = to.length, left, diagonal, up, source, char, diff;
+			while(i > 0 || j > 0) {
+				if(from.charAt(i-1) === to.charAt(j-1)) {
+					// No changes from source to destination
+					char = from.charAt(i-1), diff = '=';
 					i--;
-				} else if(source === left) {
-					/*
-					Came from left
-					Means add str2's char
-					 */
-					changes.push({
-						char: str2[j-1],
-						diff: '+'
-					});
 					j--;
+				} else {
+					if(i-1 < 0) {
+						up = MAX_DISTANCE;
+					} else {
+						up = steps[i-1][j];
+					}
+					if(j-1 < 0) {
+						left = MAX_DISTANCE;
+					} else {
+						left = steps[i][j-1];
+					}
+					if(i-1 < 0 || j-1 < 0) {
+						diagonal = MAX_DISTANCE;
+					} else {
+						diagonal = steps[i-1][j-1];
+					}
+					source = Math.min(left, up, diagonal);
+					if(source === left) {
+						// New character from destination
+						char = to.charAt(j-1), diff = '+';
+						j--;
+					} else if(source === up) {
+						// Removed character from source
+						char = from.charAt(i-1), diff = '-';
+						i--;
+					} else if(source === diagonal) {
+						// Destination character replace source
+						char = from.charAt(i-1), diff = {
+							replacedBy: to.charAt(j-1)
+						};
+						i--;
+						j--;
+					}
 				}
+				changes.push({ char, diff });
 			}
 		}
 
-		changes.reverse();
-
 		return new DiffObject({
-			[DO.FROM]: str1,
-			[DO.TO]: str2,
-			[DO.LDIS]: dp[str1.length][str2.length],
-			[DO.CHANGES]: changes
+			[DiffObjectProp.FROM]: from,
+			[DiffObjectProp.TO]: to,
+			[DiffObjectProp.CHANGES]: changes.reverse(),
+			[DiffObjectProp.LDIS]: steps[from.length][to.length]
 		});
 	}
 
-	function diffToString(diff) {
-		return diff.changes.reduce((out, d) => {
-			let string = '';
-			if(typeof d.diff === 'object') {
-				string += `(-${d.diff.replace})(+${d.char})`;
+	function diffToString(diffObject) {
+		// Specifies the index at which a group ends
+		let groupBy = [], changes = diffObject.changes;
+
+		for(let i=1; i<changes.length; i++) {
+			if(changes[i].diff !== changes[i-1].diff || typeof changes[i].diff === 'object') {
+				groupBy.push(i-1);
+			}
+		}
+		groupBy.push(changes.length-1);
+
+		let out = '', pointer = 0;
+		for(let i=0; i<groupBy.length; i++) {
+			if(typeof changes[pointer].diff === 'object') {
+				out += `(-${changes[pointer].char})(+${changes[pointer].diff.replacedBy})`;
 			} else {
-				if(d.diff === '=') {
-					string += d.char;
-				} else {
-					string += `(${d.diff}${d.char})`;
+				if(changes[pointer].diff !== '=') {
+					out += `(${changes[pointer].diff}`;
+				}
+				for(let j=pointer; j<=groupBy[i]; j++) {
+					out += `${changes[j].char}`;
+				}
+				if(changes[pointer].diff !== '=') {
+					out += ')';
 				}
 			}
-			return out + string;
-		}, '');
+			pointer = groupBy[i]+1;
+		}
+		return out;
 	}
 
 	return {
