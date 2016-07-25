@@ -16,19 +16,19 @@ iqwerty.diff.Diff(source, destination);
 
 A `DiffObject` is returned. It contains the following properties:
 
-### `from`
+### `.from`
 The source string - in this case: 'pineapple'.
 
-### `to`
+### `.to`
 The destination string - in this case: 'apple'.
 
-### `levenshteinDistance`
+### `.levenshteinDistance`
 The edit distance, or the amount of changes needed to transform the source to destination string.
 
-### `changes`
+### `.changes`
 An array containing the changes needed to transform the source string. You may parse this yourself if you wish.
 
-### `toString()`
+### `.toString()`
 Call this method to print the default string with changes made. In this case, `.toString()` will output
 
 ```html
