@@ -27,8 +27,8 @@ Test('"pineapple" to "apple" should have an array of 9 changes')
 	.expect(diff.changes.length)
 	.toBe(9);
 
-Test('"pineapple" to "apple" should output a diff string of "(-p)(-i)(-n)(-e)apple"')
-	.expect(diff.toString())
+Test('"pineapple" to "apple" should output a diff string of "(-pine)apple"')
+	.expect(diff.toString().plainText)
 	.toBe('(-pine)apple');
 
 
@@ -37,8 +37,8 @@ Test('"apple" to "pineapple" should have a Levenshtein distance of 4')
 	.expect(diff.levenshteinDistance)
 	.toBe(4);
 
-Test('"apple" to "pineapple" should output a diff string of "(+p)(+i)(+n)(+e)apple"')
-	.expect(diff.toString())
+Test('"apple" to "pineapple" should output a diff string of "(+pine)apple"')
+	.expect(diff.toString().plainText)
 	.toBe('(+pine)apple');
 
 
@@ -52,17 +52,17 @@ Test('"kitten" to "sitting" should have an array of 7 changes')
 	.toBe(7);
 
 Test('"kitten" to "sitting" should output a diff string of "(-k)(+s)itt(-e)(+i)n(+g)"')
-	.expect(diff.toString())
+	.expect(diff.toString().plainText)
 	.toBe('(-k)(+s)itt(-e)(+i)n(+g)');
 
 
 diff = iqwerty.diff.Diff('', '.');
 Test('Edge case from empty to symbol should output a diff string of "(+.)"')
-	.expect(diff.toString())
+	.expect(diff.toString().plainText)
 	.toBe('(+.)');
 
 
 diff = iqwerty.diff.Diff('.', '');
 Test('Edge case from symbol to empty should output a diff string of "(-.)"')
-	.expect(diff.toString())
+	.expect(diff.toString().plainText)
 	.toBe('(-.)');

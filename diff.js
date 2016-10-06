@@ -14,14 +14,23 @@
 var iqwerty = iqwerty || {};
 
 iqwerty.diff = (function() {
-	
+
 	const MAX_DISTANCE = Number.MAX_SAFE_INTEGER;
+
+	const SplitBy = {
+		CHAR: '',
+		WORD: '(\\s)',
+		LINE: '(\\n)'
+	};
+
+	const DEFAULT_SPLITTER = SplitBy.CHAR;
 
 	const DiffObjectProp = {
 		FROM: 'from',
 		TO: 'to',
 		LDIS: 'levenshteinDistance',
-		CHANGES: 'changes'
+		CHANGES: 'changes',
+		SPLITTER: 'splitter'
 	};
 
 
@@ -35,7 +44,16 @@ iqwerty.diff = (function() {
 	};
 
 
-	function Diff(from, to) {
+	function Diff(from, to, splitBy = DEFAULT_SPLITTER) {
+
+		let splitter = from.match(new RegExp(splitBy));
+
+		splitter = splitter ? splitter.shift() : '';
+
+		from = from.split(new RegExp(splitBy, 'g'));
+		to = to.split(new RegExp(splitBy, 'g'));
+
+
 		// Dynamic programming matrix
 		let steps = [];
 
@@ -58,26 +76,26 @@ iqwerty.diff = (function() {
 					left = steps[i][j-1];
 					diagonal = steps[i-1][j-1];
 					up = steps[i-1][j];
-					if(from.charAt(i-1) === to.charAt(j-1)) {
+					if(from[i-1] === to[j-1]) {
 						// Current characters are same, so inherit from last LCS (which is diagonal)
 						steps[i][j] = diagonal;
 					} else {
 						// Another difference, so add one to the last optimal LCS
 						steps[i][j] = Math.min(left, diagonal, up) + 1;
-						
+
 					}
 				}
 			}
 		}
-		
+
 		//Traverse the matrix to get the differences
 		let changes = [];
 		{
 			let i = from.length, j = to.length, left, diagonal, up, source, char, diff;
 			while(i > 0 || j > 0) {
-				if(from.charAt(i-1) === to.charAt(j-1)) {
+				if(from[i-1] === to[j-1]) {
 					// No changes from source to destination
-					char = from.charAt(i-1), diff = '=';
+					char = from[i-1], diff = '=';
 					i--;
 					j--;
 				} else {
@@ -99,16 +117,16 @@ iqwerty.diff = (function() {
 					source = Math.min(left, up, diagonal);
 					if(source === left) {
 						// New character from destination
-						char = to.charAt(j-1), diff = '+';
+						char = to[j-1], diff = '+';
 						j--;
 					} else if(source === up) {
 						// Removed character from source
-						char = from.charAt(i-1), diff = '-';
+						char = from[i-1], diff = '-';
 						i--;
 					} else if(source === diagonal) {
 						// Destination character replace source
-						char = from.charAt(i-1), diff = {
-							replacedBy: to.charAt(j-1)
+						char = from[i-1], diff = {
+							replacedBy: to[j-1]
 						};
 						i--;
 						j--;
@@ -122,42 +140,115 @@ iqwerty.diff = (function() {
 			[DiffObjectProp.FROM]: from,
 			[DiffObjectProp.TO]: to,
 			[DiffObjectProp.CHANGES]: changes.reverse(),
-			[DiffObjectProp.LDIS]: steps[from.length][to.length]
+			[DiffObjectProp.LDIS]: steps[from.length][to.length],
+			[DiffObjectProp.SPLITTER]: splitter
 		});
 	}
 
-	function diffToString(diffObject) {
-		// Specifies the index at which a group ends
-		let groupBy = [], changes = diffObject.changes;
-
-		for(let i=1; i<changes.length; i++) {
-			if(changes[i].diff !== changes[i-1].diff || typeof changes[i].diff === 'object') {
-				groupBy.push(i-1);
-			}
-		}
-		groupBy.push(changes.length-1);
-
-		let out = '', pointer = 0;
-		for(let i=0; i<groupBy.length; i++) {
-			if(typeof changes[pointer].diff === 'object') {
-				out += `(-${changes[pointer].char})(+${changes[pointer].diff.replacedBy})`;
+	function _flatten(obj) {
+		let out = [];
+		for(let i=0; i<obj.length; i++) {
+			let _d = obj[i];
+			if(typeof _d.diff === 'object') {
+				out.push({
+					char: _d.char,
+					diff: '-'
+				});
+				out.push({
+					char: _d.diff.replacedBy,
+					diff: '+'
+				});
 			} else {
-				if(changes[pointer].diff !== '=') {
-					out += `(${changes[pointer].diff}`;
-				}
-				for(let j=pointer; j<=groupBy[i]; j++) {
-					out += `${changes[j].char}`;
-				}
-				if(changes[pointer].diff !== '=') {
-					out += ')';
-				}
+				out.push(_d);
 			}
-			pointer = groupBy[i]+1;
 		}
 		return out;
 	}
 
+	function _group(diffs) {
+		let remove = '', add = '', equals = '', out = [];
+		for(let i=0; i<diffs.length; i++) {
+			if(diffs[i].diff !== '=') {
+				if(equals) {
+					out.push({
+						char: equals,
+						diff: '='
+					});
+					equals = '';
+				}
+
+				if(diffs[i].diff === '-') {
+					remove += diffs[i].char;
+				} else {
+					add += diffs[i].char;
+				}
+			} else {
+				// Add the minuses and pluses to the output and reset for next round
+				if(remove) {
+					out.push({
+						char: remove,
+						diff: '-'
+					});
+					remove = '';
+				}
+				if(add) {
+					out.push({
+						char: add,
+						diff: '+'
+					});
+					add = '';
+				}
+
+				// Add the equals until the next non-equal
+				equals += diffs[i].char;
+			}
+		}
+		// Push the rest of the stuff in
+		if(remove) {
+			out.push({
+				char: remove,
+				diff: '-'
+			});
+		}
+		if(add) {
+			out.push({
+				char: add,
+				diff: '+'
+			});
+		}
+		if(equals) {
+			out.push({
+				char: equals,
+				diff: '='
+			});
+		}
+		return out;
+	}
+
+	function diffToString(diffObject) {
+		// I think the logic is: group everything until the next '='
+		let flattened = _flatten(diffObject.changes);
+		flattened = _group(flattened);
+
+
+		let plainText = '', richText = '';
+		for(let i=0; i<flattened.length; i++) {
+			let cur = flattened[i];
+			if(cur.diff === '=') {
+				plainText += cur.char;
+				richText += cur.char;
+			} else {
+				let txt = `(${cur.diff}${cur.char})`;
+				plainText += txt;
+				richText += `<span class="iqwerty-diff-${cur.diff === '+' ? 'add' : 'remove'}">${txt}</span>`;
+			}
+		}
+
+		return { plainText, richText };
+	}
+
 	return {
-		Diff
+		Diff,
+		SplitBy
 	};
 })();
