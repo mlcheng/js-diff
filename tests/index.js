@@ -12,57 +12,52 @@
 'use strict';
 
 /* globals require, __dirname, iqwerty */
-const { Test, inject } = require('../../test/test.js');
+const { Test, inject } = require('../../janus/janus.js');
 inject(__dirname, '../diff.js');
 
 
-let diff;
+const pineappleDiff = iqwerty.diff.Diff('pineapple', 'apple');
+const appleDiff = iqwerty.diff.Diff('apple', 'pineapple');
+const kittyDiff = iqwerty.diff.Diff('kitten', 'sitting');
 
-diff = iqwerty.diff.Diff('pineapple', 'apple');
-Test('"pineapple" to "apple" should have Levenshtein distance of 4')
-	.expect(diff.levenshteinDistance)
-	.toBe(4);
+Test('"pineapple" to "apple" should have a Levenshtein distance of 4', ({ expect }) => {
+	expect(pineappleDiff.levenshteinDistance).toBe(4);
+});
 
-Test('"pineapple" to "apple" should have an array of 9 changes')
-	.expect(diff.changes.length)
-	.toBe(9);
+Test('"pineapple" to "apple" should have an array of 9 changes', ({ expect }) => {
+	expect(pineappleDiff.changes.length).toBe(9);
+});
 
-Test('"pineapple" to "apple" should output a diff string of "(-pine)apple"')
-	.expect(diff.toString().plainText)
-	.toBe('(-pine)apple');
+Test('"pineapple" to "apple" should output a diff string of "(-pine)apple"', ({ expect }) => {
+	expect(pineappleDiff.toString().plainText).toBe('(-pine)apple');
+});
 
+Test('"apple" to "pineapple" should have a Levenshtein distance of 4', ({ expect }) => {
+	expect(appleDiff.levenshteinDistance).toBe(4);
+});
 
-diff = iqwerty.diff.Diff('apple', 'pineapple');
-Test('"apple" to "pineapple" should have a Levenshtein distance of 4')
-	.expect(diff.levenshteinDistance)
-	.toBe(4);
+Test('"apple" to "pineapple" should output a diff string of "(+pine)apple"', ({ expect }) => {
+	expect(appleDiff.toString().plainText).toBe('(+pine)apple');
+});
 
-Test('"apple" to "pineapple" should output a diff string of "(+pine)apple"')
-	.expect(diff.toString().plainText)
-	.toBe('(+pine)apple');
+Test('"kitten" to "sitting" should have a Levenshtein distance of 3', ({ expect }) => {
+	expect(kittyDiff.levenshteinDistance).toBe(3);
+});
 
+Test('"kitten" to "sitting" should have an array of 7 changes', ({ expect }) => {
+	expect(kittyDiff.changes.length).toBe(7);
+});
 
-diff = iqwerty.diff.Diff('kitten', 'sitting');
-Test('"kitten" to "sitting" should have a Levenshtein distance of 3')
-	.expect(diff.levenshteinDistance)
-	.toBe(3);
+Test('"kitten" to "sitting" should output a diff string of "(-k)(+s)itt(-e)(+i)n(+g)"', ({ expect }) => {
+	expect(kittyDiff.toString().plainText).toBe('(-k)(+s)itt(-e)(+i)n(+g)');
+});
 
-Test('"kitten" to "sitting" should have an array of 7 changes')
-	.expect(diff.changes.length)
-	.toBe(7);
+Test('Edge case from empty to symbol should output a diff string of "(+.)"', ({ expect }) => {
+	const diff = iqwerty.diff.Diff('', '.');
+	expect(diff.toString().plainText).toBe('(+.)');
+});
 
-Test('"kitten" to "sitting" should output a diff string of "(-k)(+s)itt(-e)(+i)n(+g)"')
-	.expect(diff.toString().plainText)
-	.toBe('(-k)(+s)itt(-e)(+i)n(+g)');
-
-
-diff = iqwerty.diff.Diff('', '.');
-Test('Edge case from empty to symbol should output a diff string of "(+.)"')
-	.expect(diff.toString().plainText)
-	.toBe('(+.)');
-
-
-diff = iqwerty.diff.Diff('.', '');
-Test('Edge case from symbol to empty should output a diff string of "(-.)"')
-	.expect(diff.toString().plainText)
-	.toBe('(-.)');
+Test('Edge case from symbol to empty should output a diff string of "(-.)"', ({ expect }) => {
+	const diff = iqwerty.diff.Diff('.', '');
+	expect(diff.toString().plainText).toBe('(-.)');
+});
