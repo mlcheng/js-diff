@@ -1,0 +1,10 @@
+{
+	"js": {
+		"bundle": [
+			{
+				"entry": "diff.js",
+				"export": "iqwerty"
+			}
+		]
+	}
+}

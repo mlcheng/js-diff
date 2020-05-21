@@ -11,10 +11,7 @@
 
 'use strict';
 
-var iqwerty = iqwerty || {};
-
-iqwerty.diff = (function() {
-
+export const diff = (() => {
 	const MAX_DISTANCE = Number.MAX_SAFE_INTEGER;
 
 	const SplitBy = {
@@ -33,26 +30,21 @@ iqwerty.diff = (function() {
 		SPLITTER: 'splitter'
 	};
 
-
 	function DiffObject(obj) {
 		Object.assign(this, obj);
 	}
-
 
 	DiffObject.prototype.toString = function() {
 		return diffToString(this);
 	};
 
-
-	function Diff(from, to, splitBy = DEFAULT_SPLITTER) {
-
+	function diff(from, to, splitBy = DEFAULT_SPLITTER) {
 		let splitter = from.match(new RegExp(splitBy));
 
 		splitter = splitter ? splitter.shift() : '';
 
 		from = from.split(new RegExp(splitBy, 'g'));
 		to = to.split(new RegExp(splitBy, 'g'));
-
 
 		// Dynamic programming matrix
 		let steps = [];
@@ -66,7 +58,6 @@ iqwerty.diff = (function() {
 				else steps[i][j] = 0;
 			}
 		}
-
 
 		// Build the Levenshtein distance matrix
 		{
@@ -89,7 +80,7 @@ iqwerty.diff = (function() {
 		}
 
 		//Traverse the matrix to get the differences
-		let changes = [];
+		const changes = [];
 		{
 			let i = from.length, j = to.length, left, diagonal, up, source, char, diff;
 			while(i > 0 || j > 0) {
@@ -146,9 +137,9 @@ iqwerty.diff = (function() {
 	}
 
 	function _flatten(obj) {
-		let out = [];
+		const out = [];
 		for(let i=0; i<obj.length; i++) {
-			let _d = obj[i];
+			const _d = obj[i];
 			if(typeof _d.diff === 'object') {
 				out.push({
 					char: _d.char,
@@ -203,6 +194,7 @@ iqwerty.diff = (function() {
 				equals += diffs[i].char;
 			}
 		}
+
 		// Push the rest of the stuff in
 		if(remove) {
 			out.push({
@@ -247,8 +239,5 @@ iqwerty.diff = (function() {
 		return { plainText, richText };
 	}
 
-	return {
-		Diff,
-		SplitBy
-	};
+	return { diff, SplitBy };
 })();
