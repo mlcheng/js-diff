@@ -8,8 +8,8 @@ A demo is available on my [playground](https://playground.michaelcheng.us/lib-js
 To find the diff between two strings, specify the source and the final string to find the transformation.
 
 ```javascript
-let source = 'pineapple';
-let destination = 'apple';
+const source = 'pineapple';
+const destination = 'apple';
 
 iqwerty.diff.diff(source, destination);
 ```
